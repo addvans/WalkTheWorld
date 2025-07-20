@@ -126,10 +126,10 @@ namespace WalkTheWorld
             var b = Find.WorldObjects.WorldObjectAt<WorldObject>(tile);
             if (b != null)
             {
-                nm += $"{b.LabelCap}";
+                nm += $"{b.LabelCap}\n";
                 if (b.Faction != null)
                     if (b.Faction != Faction.OfPlayer)
-                        nm += $"{"Faction_Label".Translate()}: ({b.Faction.Name}) - {b.Faction.RelationKindWith(Faction.OfPlayer).ToStringSafe()}";
+                        nm += $"{"Faction_Label".Translate()}: ({b.Faction.Name}) - {b.Faction.RelationKindWith(Faction.OfPlayer)}";
             }
             var c = tile.Tile.Landmark;
             if (c != null)

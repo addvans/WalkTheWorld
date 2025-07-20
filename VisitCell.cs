@@ -14,16 +14,10 @@ namespace WalkTheWorld
         public bool affected = false;
         public static bool IsAffectedByPlayer(Map map)
         {
-            // Проверяем любые постройки игрока
             if (map.listerBuildings.allBuildingsColonist.Any())
                 return true;
-
-            // Проверяем мебель, предметы и другие созданные игроком вещи
             if (map.listerThings.ThingsInGroup(ThingRequestGroup.HaulableAlways).Any(t => t.Faction == Faction.OfPlayer))
                 return true;
-
-
-            // Проверяем зоны, созданные игроком
             if (map.zoneManager.AllZones.Any(z => z is Zone_Stockpile || z is Zone_Growing))
                 return true;
 
@@ -41,8 +35,18 @@ namespace WalkTheWorld
             {
                 allComps[i].PostMyMapRemoved();
             }
-
             QuestUtility.SendQuestTargetSignals(questTags, "MapRemoved", this.Named("SUBJECT"));
+
+            if (ModsConfig.OdysseyActive && this.Map.TileInfo.Landmark != null)
+            {
+                List<TileMutatorDef> listToRemove = WalkTheWorldMod.Settings.mutatorsToDelete
+                     .Select(defName => DefDatabase<TileMutatorDef>.GetNamedSilentFail(defName))
+                     .Where(def => def != null)
+                     .ToList();
+                foreach (var mut in listToRemove)
+                    if (this.Map.TileInfo.Mutators.Contains(mut))
+                        this.Map.TileInfo.Mutators.Remove(mut);
+            }
         }
         public bool TaskedToRemove = false;
         public override bool ShouldRemoveMapNow(out bool alsoRemoveWorldObject)
@@ -58,16 +62,6 @@ namespace WalkTheWorld
                     affected = IsAffectedByPlayer(this.Map);
                 if (!affected)
                 {
-                    if (ModsConfig.OdysseyActive && this.Map.TileInfo.Landmark != null)
-                    {
-                        List<TileMutatorDef> listToRemove = WalkTheWorldMod.Settings.mutatorsToDelete
-                             .Select(defName => DefDatabase<TileMutatorDef>.GetNamedSilentFail(defName))
-                             .Where(def => def != null) // Отфильтровываем null (если Def не найден)
-                             .ToList();
-                        foreach (var mut in listToRemove)
-                            if (this.Map.TileInfo.Mutators.Contains(mut))
-                                this.Map.TileInfo.Mutators.Remove(mut);
-                    }
                     alsoRemoveWorldObject = true;
                     return true;
                 }
