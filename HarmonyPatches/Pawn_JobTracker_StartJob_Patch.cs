@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using RimWorld;
 using System;
+using System.Collections.Generic;
 using Verse.AI;
 using Verse;
 using RimWorld.Planet;
@@ -30,6 +31,7 @@ namespace WalkTheWorld.HarmonyPatches
         {
             try
             {
+
                 if (___pawn.Faction == null)
                     return;
                 if (___pawn.Faction != Faction.OfPlayer)
@@ -37,17 +39,29 @@ namespace WalkTheWorld.HarmonyPatches
                 if (newJob == null && newJob.targetA == null)
                     return;
                 if (___pawn.Map.Parent is Settlement)
-                    if ((newJob.def == JobDefOf.Equip || newJob.def == JobDefOf.ForceTargetWear || newJob.def == JobDefOf.Ingest || newJob.def == JobDefOf.TakeFromOtherInventory || newJob.def == JobDefOf.TakeInventory || newJob.def == JobDefOf.PickupToHold) && newJob.targetA.Thing != null)
+                {
+                    List<JobDef> blacklist = new List<JobDef>
+                                {
+                                    JobDefOf.Equip,
+                                    JobDefOf.HaulToContainer,
+                                    JobDefOf.HaulToCell,
+                                    JobDefOf.HaulToTransporter,
+                                    JobDefOf.ForceTargetWear,
+                                    JobDefOf.Ingest,
+                                    JobDefOf.TakeFromOtherInventory,
+                                    JobDefOf.TakeInventory,
+                                    JobDefOf.PickupToHold
+                                };
+                    if (blacklist.Contains(newJob.def) && newJob.targetA.Thing != null)
                     {
                         Thing itm = newJob.targetA.Thing;
-                        Log.Message($"{itm}");
-
                         if (IsNativeMapItem(itm, itm.Map))
                         {
-                            itm.Map.ParentFaction.TryAffectGoodwillWith(Faction.OfPlayer, -10, reason: HistoryEventDefOf.UsedForbiddenThing); // Штраф к отношениям
+                            itm.Map.ParentFaction.TryAffectGoodwillWith(Faction.OfPlayer, -(int)(itm.MarketValue * itm.stackCount * 0.1f), reason: HistoryEventDefOf.UsedForbiddenThing); // Штраф к отношениям
                         }
 
                     }
+                }
             }
             catch (Exception)
             {

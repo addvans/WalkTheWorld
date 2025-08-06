@@ -14,6 +14,9 @@ namespace WalkTheWorld
         public WalkTheWorldMod(ModContentPack content) : base(content)
         {
             Settings = GetSettings<WalkTheWorldModSettings>();
+            LongEventHandler.ExecuteWhenFinished(() => {
+                Settings.InitializeMutators();
+            });
         }
 
         public override string SettingsCategory() => "Walk the World"; // Название в меню настроек
@@ -53,6 +56,10 @@ namespace WalkTheWorld
                     listing.Label("WTW_Settings_EventChancePerMapDisabledLabel".Translate());
                 Settings.mapCountForEvent = (int)listing.Slider(Settings.mapCountForEvent, 0, 40);
                 listing.CheckboxLabeled("WTW_Settings_LeavingConfirmationMenuLabel".Translate(), ref Settings.showConfirmationPreviewMenu);
+                listing.GapLine();
+                listing.Label("WTW_Settings_ExitMapGrid_Description".Translate());
+                listing.CheckboxLabeled("WTW_Settings_disableExitMapGridLabel".Translate(), ref Settings.disableExitMapGridEverywhere);
+                listing.GapLine();
                 listing.Label("WTW_Settings_WhoLeavingTheMapLabel".Translate());
                 if (listing.ButtonText(leavingTypesNames[(int)Settings.leavingType], widthPct: 0.3f))
                 {
@@ -105,7 +112,8 @@ namespace WalkTheWorld
                     Settings.mapCountForEvent = 5;
                     Settings.leavingType = LeavingType.Selected;
                     Settings.eventsFilter = RandomEventsFilterType.Filtered;
-
+                    Settings.showConfirmationPreviewMenu = true;
+                    Settings.disableExitMapGridEverywhere = true;
                 }
 
             }

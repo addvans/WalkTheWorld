@@ -83,8 +83,11 @@ namespace WalkTheWorld
         
         public static void TransferWeatherEvent(Map fromMap, Map toMap)
         {
-            foreach(var b in fromMap.gameConditionManager.ActiveConditions)
+            foreach (var b in fromMap.gameConditionManager.ActiveConditions)
+            {
+                if(b.Permanent) continue;
                 toMap.gameConditionManager.RegisterCondition(b);
+            }
         }
 
         public static bool TryCreateEventForMap(Map map)
@@ -113,7 +116,6 @@ namespace WalkTheWorld
                     Find.Storyteller.storytellerComps.FirstOrDefault(),
                     parms: parms
                 );
-
                 if (!Find.Storyteller.TryFire(fi))
                     return TryCreateEventForMap(map);
                 mapsSinceLastEvent = 0;

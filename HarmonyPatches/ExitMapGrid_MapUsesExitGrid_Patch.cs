@@ -18,7 +18,7 @@ namespace WalkTheWorld.HarmonyPatches
         {
             Map map = (Map)_mapField.GetValue(__instance);
 
-            if (map.Parent is VisitCell)
+            if (map.Parent is VisitCell || WalkTheWorldMod.Settings.disableExitMapGridEverywhere)
             {
                 __result = true;
                 return false;

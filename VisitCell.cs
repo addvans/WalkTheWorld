@@ -37,15 +37,15 @@ namespace WalkTheWorld
             }
             QuestUtility.SendQuestTargetSignals(questTags, "MapRemoved", this.Named("SUBJECT"));
 
-            if (ModsConfig.OdysseyActive && this.Map.TileInfo.Landmark != null)
+            if (ModsConfig.OdysseyActive && this.Tile.Tile.Landmark != null)
             {
                 List<TileMutatorDef> listToRemove = WalkTheWorldMod.Settings.mutatorsToDelete
                      .Select(defName => DefDatabase<TileMutatorDef>.GetNamedSilentFail(defName))
                      .Where(def => def != null)
                      .ToList();
                 foreach (var mut in listToRemove)
-                    if (this.Map.TileInfo.Mutators.Contains(mut))
-                        this.Map.TileInfo.Mutators.Remove(mut);
+                    if (this.Tile.Tile.Mutators.Contains(mut))
+                        this.Tile.Tile.Mutators.Remove(mut);
             }
         }
         public bool TaskedToRemove = false;

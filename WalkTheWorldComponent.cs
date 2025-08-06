@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
 using RimWorld;
-using UnityEngine;
 using Verse;
-using Verse.AI;
 using RimWorld.Planet;
-using WalkTheWorld;
-using System.Reflection;
 
 namespace WalkTheWorld
 {
@@ -31,95 +25,103 @@ namespace WalkTheWorld
 
         }
 
-
         public void FinalizeTravel(Pawn pawn, Map targetMap)
         {
-            var pawns = Find.CurrentMap.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer).ToList();
-            if (WalkTheWorldMod.Settings?.leavingType == LeavingType.Selected)
-            {
-                pawns = Find.Selector.SelectedPawns
-                                                .Where(p => p.IsColonistPlayerControlled || p.Drafted)
-                                                .ToList();
-            }
-            else if (WalkTheWorldMod.Settings?.leavingType == LeavingType.AlwaysAsk)
-            {//НАДОПЕРЕВЕСТИ!!
-                Find.WindowStack.Add(new Dialog_MessageBox($"Who should visit next tile?",
-                               "All my Pawns", () =>
-                               {
-                               }, "Selected only", () =>
-                               {
-                                   pawns = Find.Selector.SelectedPawns
-                                                .Where(p => p.IsColonistPlayerControlled || p.Drafted)
-                                                .ToList();
-                               }));
-            }
-
             var oldPos = pawn.Position;
             var camPos = IntVec3.Zero;
             var oldSize = pawn.Map.Size;
-            var caravan = CaravanExitMapUtility.ExitMapAndCreateCaravan(pawns, Faction.OfPlayer, Find.CurrentMap.Tile, Direction8Way.North, targetMap.Tile, sendMessage: false);
+            Caravan caravan = LeaveMap(targetMap);
 
             CaravanEnterMapUtility.Enter(caravan, targetMap, CaravanEnterMode.Edge,
                 extraCellValidator: WalkTheWorld_WorldTileUtility.GetEntryPredicate(targetMap, oldPos, oldSize, out camPos),
                 draftColonists: true);
-
             Current.Game.CurrentMap = targetMap;
-            var c = Find.CameraDriver.MapPosition;
-            var b = Find.CameraDriver.RootSize;
             Find.Selector.Select(pawn);
-            if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.OnEnteredPawns)
-                Find.CameraDriver.JumpToCurrentMapLoc(camPos);
-            else if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.Centered)
-            {
-                Find.CameraDriver.JumpToCurrentMapLoc(targetMap.Center);
-                Find.CameraDriver.SetRootSize(b);
-            }
-            else
-            {
-                Find.CameraDriver.JumpToCurrentMapLoc(c);
-                Find.CameraDriver.SetRootSize(b);
-            }
+            ResetCamera(GetNewCameraPosition(pawn, targetMap));
             lastEnterPos = pawn.Position;
         }
 
+        IntVec3 GetNewCameraPosition(Pawn pawn, Map newMap)
+        {
+            if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.OnEnteredPawns)
+                return pawn.Position;
+            if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.Centered)
+                return newMap.Center;
+            if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.Ignore)
+                return Find.CameraDriver.MapPosition;
+            return Find.CameraDriver.MapPosition;
+        }
+        void ResetCamera(IntVec3 camPos)
+        {
+            float zoom = Find.CameraDriver.ZoomRootSize;
+            Find.CameraDriver.JumpToCurrentMapLoc(camPos);
+            Find.CameraDriver.SetRootSize(zoom);
+
+        }
+
+        Caravan LeaveMap(Map targetMap)
+        {
+            List<Pawn> pawns = GetLeavingPawns();
+            var caravan = CaravanExitMapUtility.ExitMapAndCreateCaravan(pawns, Faction.OfPlayer, Find.CurrentMap.Tile, Direction8Way.North, targetMap.Tile, sendMessage: false);
+            return caravan;
+        }
+
+        List<Pawn> GetLeavingPawns()
+        {
+            List<Pawn> pawns = new List<Pawn>();
+            if (WalkTheWorldMod.Settings?.leavingType == LeavingType.Selected)
+            {
+                pawns = Find.Selector.SelectedPawns
+                                                .Where(p => p.IsColonistPlayerControlled)
+                                                .ToList();
+            }
+            else if (WalkTheWorldMod.Settings?.leavingType == LeavingType.AlwaysAsk)
+            {
+                pawns = ShowChoosingWindow();
+            }
+            return pawns;
+        }
+        List<Pawn> ShowChoosingWindow()
+        {
+            List<Pawn> result = new List<Pawn>();
+            Find.WindowStack.Add(new Dialog_MessageBox($"WTW_Settings_WhoLeavingTheMapLabel".Translate(),//НАДОПЕРЕВЕСТИ!!
+                              "WTW_Settings_EveryoneLeavingTheMap".Translate(), () =>
+                              {
+                                  result = Find.CurrentMap.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer).ToList();
+
+                              }, "WTW_Settings_SelecetedLeavingTheMap".Translate(), () =>
+                              {
+                                  result = Find.Selector.SelectedPawns
+                                               .Where(p => p.IsColonistPlayerControlled )
+                                               .ToList();
+                              }));
+            return result;  
+        }
         public override void GameComponentTick()
         {
             base.GameComponentTick();
-            if (Find.TickManager.TicksGame - lastEnterTick < TicksCooldown)
+            if (Find.TickManager.TicksGame - lastEnterTick < TicksCooldown || !WorldRendererUtility.DrawingMap || Find.Selector.SelectedPawns.Count <= 0)
                 return;
-            if (WorldRendererUtility.DrawingMap)
+            lastEnterTick = Find.TickManager.TicksGame;
+            Pawn pawn = GetLeavingPawn();
+            if (pawn == null)
+                return;
+            PlanetTile targetTile = WalkTheWorld_WorldTileUtility.GetTileInDirection(Find.CurrentMap.Tile, WalkTheWorld_WorldTileUtility.ToDirection8Way(WalkTheWorld_WorldTileUtility.GetDirectionFromCenter(Find.CurrentMap, pawn.Position)));
+            lastEnterPos = pawn.Position;
+            if (!WalkTheWorld_WorldTileUtility.isTileWalkable(targetTile) || targetTile == -1)
+                return;
+            if (WalkTheWorldMod.Settings.showConfirmationPreviewMenu)
             {
-                if (Find.Selector.SelectedPawns.Count > 0)
-                {
-                    lastEnterTick = Find.TickManager.TicksGame;
-                    Pawn pawn = GetLeavingPawn();
-                    if (pawn == null)
-                        return;
-                    PlanetTile targetTile = WalkTheWorld_WorldTileUtility.GetTileInDirection(Find.CurrentMap.Tile, WalkTheWorld_WorldTileUtility.ToDirection8Way(WalkTheWorld_WorldTileUtility.GetDirectionFromCenter(Find.CurrentMap, pawn.Position)));
-                    lastEnterPos = pawn.Position;
-                    if (!WalkTheWorld_WorldTileUtility.isTileWalkable(targetTile))
-                        return;
-                    if (targetTile == -1)
-                        return;
-
-                    if (WalkTheWorldMod.Settings.showConfirmationPreviewMenu)
-                    {
-                        ShowConfirmationWindow(targetTile, pawn);
-
-                    }
-                    else
-                    {
-                        var mapGenerator = new MapGenerator(targetTile);
-                        mapGenerator.StartGeneration();
-                        FinalizeTravel(pawn, mapGenerator.generatedMap);
-                    }
-                }
-
+                ShowConfirmationWindow(targetTile, pawn);
 
             }
+            else
+            {
+                var mapGenerator = new MapGenerator(targetTile);
+                mapGenerator.StartGeneration();
+                FinalizeTravel(pawn, mapGenerator.generatedMap);
+            }
         }
-    
-        
 
         Pawn GetLeavingPawn()
         {
@@ -130,12 +132,10 @@ namespace WalkTheWorld
             }
             return null;
         }
+
         void ShowConfirmationWindow(PlanetTile targetTile, Pawn pawn)
         {
-            Find.World.renderer.wantedMode = WorldRenderMode.Planet;
-            Find.WorldCameraDriver.JumpTo(targetTile);
-            Find.WorldCameraDriver.ResetAltitude();
-            Find.WorldSelector.SelectedTile = targetTile;
+            FocusCameraOnTile(targetTile);
             var dialog = new Dialog_MessageBoxAdjusted($"{"LetterLabelAreaRevealed".Translate()}:\n\n{WalkTheWorld_WorldTileUtility.GetTileName(targetTile)}\n\n{"WantToContinue".Translate()}",
              "Confirm".Translate(), () => {
                  Find.World.renderer.wantedMode = WorldRenderMode.None;
@@ -145,25 +145,30 @@ namespace WalkTheWorld
 
              }, "GoBack".Translate(), () =>
              {
-                 Find.World.renderer.wantedMode = WorldRenderMode.None;
-                 Find.CameraDriver.JumpToCurrentMapLoc(pawn.Position);
-                 lastEnterTick = Find.TickManager.TicksGame + 60;
+                 FocusCameraOnPawn(pawn);
+                 lastEnterTick = Find.TickManager.TicksGame + TicksCooldown;
              });
             Find.WindowStack.Add(dialog);
         }
         
+        void FocusCameraOnTile(PlanetTile targetTile)
+        {
+            Find.World.renderer.wantedMode = WorldRenderMode.Planet;
+            Find.WorldCameraDriver.JumpTo(targetTile);
+            Find.WorldCameraDriver.ResetAltitude();
+            Find.WorldSelector.SelectedTile = targetTile;
+        }
+
+        void FocusCameraOnPawn(Pawn pawn)
+        {
+            Find.World.renderer.wantedMode = WorldRenderMode.None;
+            Find.CameraDriver.JumpToCurrentMapLoc(pawn.Position);
+        }
         
-       
         public override void GameComponentOnGUI()
         {
             base.GameComponentOnGUI();
         }
    
     }
-
-
-
-
-    
-
 }
