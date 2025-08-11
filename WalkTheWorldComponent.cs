@@ -3,6 +3,7 @@ using System.Linq;
 using RimWorld;
 using Verse;
 using RimWorld.Planet;
+using System;
 
 namespace WalkTheWorld
 {
@@ -31,9 +32,15 @@ namespace WalkTheWorld
             var camPos = IntVec3.Zero;
             var oldSize = pawn.Map.Size;
             Caravan caravan = LeaveMap(targetMap);
+            EnterMap(targetMap, caravan, WalkTheWorld_WorldTileUtility.GetEntryPredicate(targetMap, oldPos, oldSize, out camPos));
+            
+        }
 
+       public void EnterMap(Map targetMap, Caravan caravan, Predicate<IntVec3> predicate = null)
+        {
+            Pawn pawn = caravan.pawns[0];
             CaravanEnterMapUtility.Enter(caravan, targetMap, CaravanEnterMode.Edge,
-                extraCellValidator: WalkTheWorld_WorldTileUtility.GetEntryPredicate(targetMap, oldPos, oldSize, out camPos),
+                extraCellValidator: predicate,
                 draftColonists: true);
             Current.Game.CurrentMap = targetMap;
             Find.Selector.Select(pawn);
@@ -43,6 +50,7 @@ namespace WalkTheWorld
 
         IntVec3 GetNewCameraPosition(Pawn pawn, Map newMap)
         {
+            Find.World.renderer.wantedMode = WorldRenderMode.None;
             if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.OnEnteredPawns)
                 return pawn.Position;
             if (WalkTheWorldMod.Settings.camFocus == CameraFocusMode.Centered)

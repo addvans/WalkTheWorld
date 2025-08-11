@@ -5,6 +5,7 @@ using UnityEngine;
 using Verse;
 using RimWorld.Planet;
 using WalkTheWorld;
+using System;
 
 namespace WalkTheWorld.HarmonyPatches
 {
@@ -42,6 +43,21 @@ namespace WalkTheWorld.HarmonyPatches
                             },
                             true
                         ));
+                    }
+                };
+            }
+            if(__instance is Caravan caravan)
+            {
+                yield return new Command_Action
+                {
+                    defaultLabel = "WTW_WalkTile_Button".Translate(),
+                    defaultDesc = "WTW_WalkTile_Desc".Translate(),
+                    icon = ContentFinder<Texture2D>.Get("GenericWorldSite"),
+                    action = () =>
+                    {
+                        var mapGenerator = new MapGenerator(caravan.GetTileCurrentlyOver());
+                        mapGenerator.StartGeneration();
+                        WalkTheWorld.Instance.EnterMap(mapGenerator.generatedMap, caravan);
                     }
                 };
             }
