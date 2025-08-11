@@ -16,19 +16,10 @@ namespace WalkTheWorld
         public LeavingType leavingType = LeavingType.Selected;
         public CameraFocusMode camFocus = CameraFocusMode.OnEnteredPawns;
         public RandomEventsFilterType eventsFilter = RandomEventsFilterType.Filtered;
-        public List<string> mutatorsToDelete = DefDatabase<TileMutatorDef>.AllDefs
-                        .Where(m => m.defName != null && (
-                            m.defName.Contains("Ancient") ||
-                            m.defName.Contains("Abandoned") ||
-                            m.defName.Contains("Stockpile") ||
-                            m.defName.Contains("Ruins")))
-                        .Select(m => m.defName) // Сохраняем только имена
-                        .ToList();
-        private bool initialized = false;
+        public List<string> mutatorsToDelete = new List<string>();
+        public bool initialized = false;
         public override void ExposeData()
         {
-            base.ExposeData();
-
             Scribe_Values.Look(ref initialized, "initialized", false);
             Scribe_Values.Look(ref mapSize, "mapSize", 60);
             Scribe_Values.Look(ref eventChance, "eventChance", 15);
@@ -40,15 +31,11 @@ namespace WalkTheWorld
             Scribe_Values.Look(ref disableExitMapGridEverywhere, "disableExitMapGridEverywhere", true);
             // Сохраняем как список имён
             Scribe_Collections.Look(ref mutatorsToDelete, "mutatorsToDeleteNames", LookMode.Value);
-            if (!initialized)
-            {
-                InitializeMutators();
-            }
         }
 
         public void InitializeMutators()
         {
-            Log.Message("not initialized. initializing");
+            initialized = true;
             mutatorsToDelete = DefDatabase<TileMutatorDef>.AllDefs
                      .Where(m => m.defName != null && (
                          m.defName.Contains("Ancient") ||
@@ -57,7 +44,6 @@ namespace WalkTheWorld
                          m.defName.Contains("Ruins")))
                      .Select(m => m.defName) // Сохраняем только имена
                      .ToList();
-            initialized = true;
         }
     }
 

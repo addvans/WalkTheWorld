@@ -15,7 +15,8 @@ namespace WalkTheWorld
         {
             Settings = GetSettings<WalkTheWorldModSettings>();
             LongEventHandler.ExecuteWhenFinished(() => {
-                Settings.InitializeMutators();
+                if(Settings.initialized == false)
+                    Settings.InitializeMutators();
             });
         }
 
