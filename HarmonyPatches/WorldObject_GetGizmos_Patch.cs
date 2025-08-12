@@ -4,8 +4,6 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using RimWorld.Planet;
-using WalkTheWorld;
-using System;
 
 namespace WalkTheWorld.HarmonyPatches
 {

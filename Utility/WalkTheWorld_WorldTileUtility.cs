@@ -1,10 +1,6 @@
 ﻿using RimWorld.Planet;
 using RimWorld;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Verse;
 using UnityEngine;
 
@@ -21,16 +17,19 @@ namespace WalkTheWorld
             }
             return true;
         }
+
         public static bool IsOnEdge(IntVec3 c, Map map, int edgeSize = 1)
         {
             return c.x < edgeSize || c.z < edgeSize || c.x >= map.Size.x - edgeSize || c.z >= map.Size.z - edgeSize;
         }
+
         public static IntVec3 GetDirectionFromCenter(Map map, IntVec3 pos)
         {
             IntVec3 center = map.Center;
             IntVec3 offset = pos - center;
             return offset;
         }
+
         public static Direction8Way ToDirection8Way(IntVec3 offset)
         {
             if (offset.x == 0 && offset.z == 0)
@@ -75,21 +74,14 @@ namespace WalkTheWorld
         }
         public static Predicate<IntVec3> GetEntryPredicate(Map map, IntVec3 oldPos,IntVec3 oldMapSize, out IntVec3 camPos)
         {
-            // Рассчитываем центр новой карты
             IntVec3 newCenter = map.Center;
-
-            // Нормализуем позицию относительно старой карты (0-1)
             float normalizedX = (float)oldPos.x / oldMapSize.x;
             float normalizedZ = (float)oldPos.z / oldMapSize.z;
-
-            // Переносим нормализованную позицию на новую карту
             IntVec3 mirroredPos = new IntVec3(
                 (int)(map.Size.x * (1 - normalizedX)),
                 0,
                 (int)(map.Size.z * (1 - normalizedZ))
             );
-
-            // Убедимся, что позиция в пределах карты
             mirroredPos = mirroredPos.ClampInsideMap(map);
 
             Predicate<IntVec3> extraValidator = (IntVec3 c) =>
@@ -111,7 +103,7 @@ namespace WalkTheWorld
             Predicate<IntVec3> extraValidator = (IntVec3 c) =>
                                 c.InBounds(map) &&
                                 c.Standable(map) &&
-                                (c - mirroredPos).LengthHorizontalSquared <= 100 && // увеличим радиус
+                                (c - mirroredPos).LengthHorizontalSquared <= 100 && 
                                 (c.x <= 2 || c.x >= map.Size.x - 3 || c.z <= 2 || c.z >= map.Size.z - 3);
             camPos = mirroredPos;
             return extraValidator;

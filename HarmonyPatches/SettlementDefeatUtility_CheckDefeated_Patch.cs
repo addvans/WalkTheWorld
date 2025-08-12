@@ -19,7 +19,6 @@ namespace WalkTheWorld.HarmonyPatches
             {
                 return false;
             }
-
             return true;
         }
     }

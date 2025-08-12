@@ -20,7 +20,7 @@ namespace WalkTheWorld
             });
         }
 
-        public override string SettingsCategory() => "Walk the World"; // Название в меню настроек
+        public override string SettingsCategory() => "Walk the World";
         public int page = 0;
         public override void DoSettingsWindowContents(Rect inRect)
         {

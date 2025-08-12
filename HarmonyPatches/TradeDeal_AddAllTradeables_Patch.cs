@@ -25,16 +25,13 @@ namespace WalkTheWorld.HarmonyPatches
                         if (settlement.Faction != Faction.OfPlayer)
                         {
                             var tradeables = (List<Tradeable>)TradeablesField.GetValue(__instance);
-                            // Добавляем предметы из инвентаря игрока (исключая NotForSale)
                             foreach (Thing item in TradeSession.playerNegotiator.inventory.innerContainer)
                             {
-                                // Проверяем, может ли трейдер купить этот предмет
                                 if (!TradeUtility.PlayerSellableNow(item, TradeSession.trader))
                                     continue;
                                 AddToTradeablesMethod.Invoke(__instance, new object[] { item, Transactor.Colony });
 
                             }
-                            //код
                             if (!TradeSession.giftMode)
                             {
                                 foreach (Thing good in TradeSession.trader.Goods)
@@ -54,7 +51,7 @@ namespace WalkTheWorld.HarmonyPatches
                             {
                                 tradeables.Add(new Tradeable_RoyalFavor());
                             }
-                            return false; // true - выполнить оригинальный метод, false - пропустить
+                            return false; 
                         }
             }
             return true;

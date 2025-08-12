@@ -4,8 +4,6 @@ using RimWorld.QuestGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime;
-using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using Verse;
 
@@ -63,7 +61,10 @@ namespace WalkTheWorld.HarmonyPatches
                     chosen = QuestUtility.GetGiverQuests(QuestGiverTag.Traders).RandomElementByWeight(
                                 (QuestScriptDef q) => NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight(q, threatpoints, Find.World.StoryState));
                     }
-                QuestUtility.SendLetterQuestAvailable(QuestUtility.GenerateQuestAndMakeAvailable(chosen, slate));
+                if (chosen != null)
+                    QuestUtility.SendLetterQuestAvailable(QuestUtility.GenerateQuestAndMakeAvailable(chosen, slate));
+                else
+                    Log.Error("No quests were found available!");
                 
             }
             catch (Exception ex)
@@ -77,7 +78,7 @@ namespace WalkTheWorld.HarmonyPatches
             string[] diffs = { "Easy", "Medium", "Hard", "Extreme" };
             for (int i = 0; i < diffs.Length; i++)
             {
-                int index = i; // Локальная копия для замыкания
+                int index = i; 
                 options.Add(new FloatMenuOption(
                     diffs[index],
                     () => {
@@ -92,8 +93,6 @@ namespace WalkTheWorld.HarmonyPatches
             foreach (Pawn clickedPawn in context.ClickedPawns)
             {
                 if (!IsValidQuestGiver(clickedPawn)) continue;
-
-                // Расстояние до кликнутого пешки
                 float distance = float.MaxValue;
                 foreach (Pawn pawn in Find.Selector.SelectedPawns)
                     distance = Mathf.Min(distance, clickedPawn.Position.DistanceTo(pawn.Position));

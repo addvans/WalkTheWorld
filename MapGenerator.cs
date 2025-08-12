@@ -1,22 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
-using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
-using RimWorld.QuestGen;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using Verse;
-using Verse.AI;
-using Verse.Noise;
-using static System.Net.WebRequestMethods;
-using static UnityEngine.GraphicsBuffer;
 
 namespace WalkTheWorld
 {
@@ -78,7 +65,7 @@ namespace WalkTheWorld
             }
             else
                 if (!TryCreateEventForMap(generatedMap))
-                mapsSinceLastEvent += 1;
+                    mapsSinceLastEvent += 1;
         }
         
         public static void TransferWeatherEvent(Map fromMap, Map toMap)
@@ -94,8 +81,6 @@ namespace WalkTheWorld
         {
             try
             {
-                if (eventChance <= 0)
-                    return false;
                 if (!(UnityEngine.Random.Range(1, 100) <= eventChance || (mapCountForEvent > 0 & (mapsSinceLastEvent >= mapCountForEvent))))
                     return false;
                 IncidentParms parms = new IncidentParms
@@ -123,8 +108,8 @@ namespace WalkTheWorld
             }
             catch (Exception ex)
             {
-                Log.Error($"Error generating event! I will try to generate it again.{ex.ToString()}");
-                return TryCreateEventForMap(map);
+                Log.Error($"Error generating event! {ex.ToString()}");
+                return false;
             }
 
         }

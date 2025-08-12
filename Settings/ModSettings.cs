@@ -18,6 +18,7 @@ namespace WalkTheWorld
         public RandomEventsFilterType eventsFilter = RandomEventsFilterType.Filtered;
         public List<string> mutatorsToDelete = new List<string>();
         public bool initialized = false;
+
         public override void ExposeData()
         {
             Scribe_Values.Look(ref initialized, "initialized", false);
@@ -29,7 +30,6 @@ namespace WalkTheWorld
             Scribe_Values.Look(ref camFocus, "camFocus", CameraFocusMode.OnEnteredPawns);
             Scribe_Values.Look(ref showConfirmationPreviewMenu, "showConfirmationPreviewMenu", true);
             Scribe_Values.Look(ref disableExitMapGridEverywhere, "disableExitMapGridEverywhere", true);
-            // Сохраняем как список имён
             Scribe_Collections.Look(ref mutatorsToDelete, "mutatorsToDeleteNames", LookMode.Value);
         }
 
@@ -42,7 +42,7 @@ namespace WalkTheWorld
                          m.defName.Contains("Abandoned") ||
                          m.defName.Contains("Stockpile") ||
                          m.defName.Contains("Ruins")))
-                     .Select(m => m.defName) // Сохраняем только имена
+                     .Select(m => m.defName) 
                      .ToList();
         }
     }
